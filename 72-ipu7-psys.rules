@@ -1,0 +1,1 @@
+SUBSYSTEM=="intel-ipu7-psys", TAG+="uaccess"
