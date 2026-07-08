@@ -5,14 +5,14 @@
 Name:           ipu7-camera-hal
 Summary:        IPU7 Hardware Abstraction Layer
 Version:        0^%{date}git%{shortcommit}
-Release:        1%{?dist}
+Release:        2%{?dist}
 License:        Apache-2.0
 URL:            https://github.com/intel/ipu7-camera-hal
 ExclusiveArch:  x86_64
 
 Source0:        https://github.com/intel/%{name}/archive/%{commit}/%{name}-%{shortcommit}.tar.gz
 Source1:        72-ipu7-psys.rules
-Source2:        ipu7-camera-hal.conf
+Source2:        libcamhal.conf
 
 BuildRequires:  cmake
 BuildRequires:  expat-devel
@@ -25,18 +25,32 @@ BuildRequires:  libdrm-devel
 BuildRequires:  systemd-rpm-macros
 
 Requires:       ipu7-camera-bins%{?_isa}
+Requires:       libcamhal%{?_isa} = %{version}-%{release}
 
 %description
-IPU7 Hardware Abstraction Layer. It supports MIPI cameras through the IPU7 on
-Intel Lunar Lake and Panther Lake platforms.
+IPU7 Hardware Abstraction Layer plugins. They support MIPI cameras through the
+IPU7 and IPU8 on Intel Lunar Lake, Panther Lake and Novalake platforms. The
+plugins are loaded on demand by the libcamhal adaptor.
 
-%package devel
-Summary:        IPU7 header files for HAL
-Requires:       %{name}%{?_isa} = %{version}-%{release}
+%package -n libcamhal
+Summary:        Camera HAL adaptor library
+
+%description -n libcamhal
+libcamhal is the hardware abstraction layer adaptor. At runtime it detects the
+Intel IPU present on the system and loads the matching IPU6, IPU7 or IPU8 HAL
+plugin.
+
+%package -n libcamhal-devel
+Summary:        Header files for the camera HAL
+Requires:       libcamhal%{?_isa} = %{version}-%{release}
 Requires:       ipu7-camera-bins-devel
+Provides:       ipu7-camera-hal-devel = %{version}-%{release}
+Obsoletes:      ipu7-camera-hal-devel < %{version}-%{release}
+Provides:       ipu6-camera-hal-devel = %{version}-%{release}
+Obsoletes:      ipu6-camera-hal-devel < %{version}-%{release}
 
-%description devel
-This provides the necessary header files for IPU7 HAL development.
+%description -n libcamhal-devel
+This provides the necessary header files for camera HAL development.
 
 %prep
 %autosetup -p1 -n %{name}-%{commit}
@@ -63,25 +77,32 @@ export CXXFLAGS="%{optflags} -Wno-error=alloc-size-larger-than=92233720368547758
 %cmake_install
 
 install -p -m 0644 -D %{SOURCE1} %{buildroot}%{_udevrulesdir}/72-ipu7-psys.rules
-install -p -m 0644 -D %{SOURCE2} %{buildroot}%{_tmpfilesdir}/%{name}.conf
+install -p -m 0644 -D %{SOURCE2} %{buildroot}%{_tmpfilesdir}/libcamhal.conf
 
-%post
-%tmpfiles_create %{_tmpfilesdir}/%{name}.conf
+%post -n libcamhal
+%tmpfiles_create %{_tmpfilesdir}/libcamhal.conf
 
 %files
 %license LICENSE
 %{_datadir}/camera/
-%{_libdir}/libcamhal.so.0.0.0
-%{_libdir}/libcamhal.so.0
 %{_libdir}/libcamhal/
-%{_tmpfilesdir}/%{name}.conf
 %{_udevrulesdir}/72-ipu7-psys.rules
 
-%files devel
+%files -n libcamhal
+%license LICENSE
+%{_libdir}/libcamhal.so.0.0.0
+%{_libdir}/libcamhal.so.0
+%{_tmpfilesdir}/libcamhal.conf
+
+%files -n libcamhal-devel
 %{_includedir}/libcamhal/
 %{_libdir}/libcamhal.so
 %{_libdir}/pkgconfig/libcamhal.pc
 
 %changelog
+* Wed Jul 08 2026 Simone Caronni <negativo17@gmail.com> - 0^20260706git0ce5178-2
+- Split the libcamhal adaptor and headers into libcamhal and libcamhal-devel
+  subpackages, shared with ipu6-camera-hal.
+
 * Wed Jul 08 2026 Simone Caronni <negativo17@gmail.com> - 0^20260706git0ce5178-1
 - First build.
