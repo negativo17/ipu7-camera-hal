@@ -5,7 +5,7 @@
 Name:           ipu7-camera-hal
 Summary:        IPU7 Hardware Abstraction Layer
 Version:        0^%{date}git%{shortcommit}
-Release:        3%{?dist}
+Release:        4%{?dist}
 License:        Apache-2.0
 URL:            https://github.com/intel/ipu7-camera-hal
 ExclusiveArch:  x86_64
@@ -25,6 +25,7 @@ BuildRequires:  libdrm-devel
 BuildRequires:  systemd-rpm-macros
 
 Requires:       ipu7-camera-bins%{?_isa}
+Requires:       ipu7-kmod
 Requires:       libcamhal%{?_isa} = %{version}-%{release}
 
 %description
@@ -101,6 +102,9 @@ install -p -m 0644 -D %{SOURCE2} %{buildroot}%{_tmpfilesdir}/libcamhal.conf
 %{_libdir}/pkgconfig/libcamhal.pc
 
 %changelog
+* Wed Jul 08 2026 Simone Caronni <negativo17@gmail.com> - 0^20260706git0ce5178-4
+- Require the ipu7-kmod kernel modules.
+
 * Wed Jul 08 2026 Simone Caronni <negativo17@gmail.com> - 0^20260706git0ce5178-3
 - Ship all Markdown documentation files.
 
