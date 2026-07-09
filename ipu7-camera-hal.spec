@@ -5,7 +5,7 @@
 Name:           ipu7-camera-hal
 Summary:        IPU7 Hardware Abstraction Layer
 Version:        0^%{date}git%{shortcommit}
-Release:        6%{?dist}
+Release:        7%{?dist}
 License:        Apache-2.0
 URL:            https://github.com/intel/ipu7-camera-hal
 ExclusiveArch:  x86_64
@@ -84,6 +84,11 @@ export CXXFLAGS="%{optflags} -Wno-error=alloc-size-larger-than=92233720368547758
 install -p -m 0644 -D %{SOURCE1} %{buildroot}%{_udevrulesdir}/72-ipu7-psys.rules
 install -p -m 0644 -D %{SOURCE2} %{buildroot}%{_tmpfilesdir}/libcamhal.conf
 
+# Load the PSYS module at boot so /dev/ipu-psys0 is available (it does not
+# auto-load); this covers both IPU7 and IPU8:
+install -d %{buildroot}%{_modulesloaddir}
+echo intel-ipu7-psys > %{buildroot}%{_modulesloaddir}/ipu7-psys.conf
+
 %post -n libcamhal
 %tmpfiles_create %{_tmpfilesdir}/libcamhal.conf
 
@@ -92,6 +97,7 @@ install -p -m 0644 -D %{SOURCE2} %{buildroot}%{_tmpfilesdir}/libcamhal.conf
 %doc *.md
 %{_datadir}/camera/
 %{_libdir}/libcamhal/
+%{_modulesloaddir}/ipu7-psys.conf
 %{_udevrulesdir}/72-ipu7-psys.rules
 
 %files -n libcamhal
@@ -106,6 +112,9 @@ install -p -m 0644 -D %{SOURCE2} %{buildroot}%{_tmpfilesdir}/libcamhal.conf
 %{_libdir}/pkgconfig/libcamhal.pc
 
 %changelog
+* Thu Jul 09 2026 Simone Caronni <negativo17@gmail.com> - 0^20260706git0ce5178-7
+- Load the intel-ipu7-psys module at boot through modules-load.d.
+
 * Wed Jul 08 2026 Simone Caronni <negativo17@gmail.com> - 0^20260706git0ce5178-6
 - Provide vision-kmod-common to satisfy the akmod-vision dependency.
 
