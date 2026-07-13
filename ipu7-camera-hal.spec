@@ -5,14 +5,15 @@
 Name:           ipu7-camera-hal
 Summary:        IPU7 Hardware Abstraction Layer
 Version:        0^%{date}git%{shortcommit}
-Release:        7%{?dist}
+Release:        8%{?dist}
 License:        Apache-2.0
 URL:            https://github.com/intel/ipu7-camera-hal
 ExclusiveArch:  x86_64
 
 Source0:        https://github.com/intel/%{name}/archive/%{commit}/%{name}-%{shortcommit}.tar.gz
 Source1:        72-ipu7-psys.rules
-Source2:        libcamhal.conf
+Source2:        50-ipu7-hide-raw-v4l2.conf
+Source3:        libcamhal.conf
 
 BuildRequires:  cmake
 BuildRequires:  expat-devel
@@ -31,6 +32,7 @@ Provides:       vision-kmod-common = 1
 Requires:       ipu7-camera-bins%{?_isa}
 Requires:       ipu7-kmod
 Requires:       libcamhal%{?_isa} = %{version}-%{release}
+Requires:       wireplumber
 
 %description
 IPU7 Hardware Abstraction Layer plugins. They support MIPI cameras through the
@@ -82,12 +84,21 @@ export CXXFLAGS="%{optflags} -Wno-error=alloc-size-larger-than=92233720368547758
 %cmake_install
 
 install -p -m 0644 -D %{SOURCE1} %{buildroot}%{_udevrulesdir}/72-ipu7-psys.rules
-install -p -m 0644 -D %{SOURCE2} %{buildroot}%{_tmpfilesdir}/libcamhal.conf
+install -p -m 0644 -D %{SOURCE3} %{buildroot}%{_tmpfilesdir}/libcamhal.conf
 
 # Load the PSYS module at boot so /dev/ipu-psys0 is available (it does not
 # auto-load); this covers both IPU7 and IPU8:
 install -d %{buildroot}%{_modulesloaddir}
 echo intel-ipu7-psys > %{buildroot}%{_modulesloaddir}/ipu7-psys.conf
+
+# Filter out raw v4l2 devices (not usable) from the list of available cameras in Pipewire:
+install -p -m 0644 -D %{SOURCE3} %{buildroot}%{_datadir}/wireplumber/wireplumber.conf.d/50-ipu7-hide-raw-v4l2.conf
+
+%post
+%systemd_user_post wireplumber.service
+
+%postun
+%systemd_user_postun_with_restart wireplumber.service
 
 %post -n libcamhal
 %tmpfiles_create %{_tmpfilesdir}/libcamhal.conf
@@ -99,6 +110,7 @@ echo intel-ipu7-psys > %{buildroot}%{_modulesloaddir}/ipu7-psys.conf
 %{_libdir}/libcamhal/
 %{_modulesloaddir}/ipu7-psys.conf
 %{_udevrulesdir}/72-ipu7-psys.rules
+%{_datadir}/wireplumber/wireplumber.conf.d/50-ipu7-hide-raw-v4l2.conf
 
 %files -n libcamhal
 %license LICENSE
@@ -112,6 +124,9 @@ echo intel-ipu7-psys > %{buildroot}%{_modulesloaddir}/ipu7-psys.conf
 %{_libdir}/pkgconfig/libcamhal.pc
 
 %changelog
+* Mon Jul 13 2026 Simone Caronni <negativo17@gmail.com> - 0^20260706git0ce5178-8
+- Add wireplumber configuration to hide raw v4l2 devices.
+
 * Thu Jul 09 2026 Simone Caronni <negativo17@gmail.com> - 0^20260706git0ce5178-7
 - Load the intel-ipu7-psys module at boot through modules-load.d.
 
