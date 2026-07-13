@@ -5,7 +5,7 @@
 Name:           ipu7-camera-hal
 Summary:        IPU7 Hardware Abstraction Layer
 Version:        0^%{date}git%{shortcommit}
-Release:        8%{?dist}
+Release:        9%{?dist}
 License:        Apache-2.0
 URL:            https://github.com/intel/ipu7-camera-hal
 ExclusiveArch:  x86_64
@@ -94,11 +94,11 @@ echo intel-ipu7-psys > %{buildroot}%{_modulesloaddir}/ipu7-psys.conf
 # Filter out raw v4l2 devices (not usable) from the list of available cameras in Pipewire:
 install -p -m 0644 -D %{SOURCE3} %{buildroot}%{_datadir}/wireplumber/wireplumber.conf.d/50-ipu7-hide-raw-v4l2.conf
 
-%post
-%systemd_user_post wireplumber.service
-
-%postun
-%systemd_user_postun_with_restart wireplumber.service
+%posttrans
+if [ -x /usr/lib/systemd/systemd-update-helper ]; then
+    /usr/lib/systemd/systemd-update-helper mark-restart-user-units wireplumber.service || :
+    /usr/lib/systemd/systemd-update-helper user-restart || :
+fi
 
 %post -n libcamhal
 %tmpfiles_create %{_tmpfilesdir}/libcamhal.conf
@@ -124,6 +124,9 @@ install -p -m 0644 -D %{SOURCE3} %{buildroot}%{_datadir}/wireplumber/wireplumber
 %{_libdir}/pkgconfig/libcamhal.pc
 
 %changelog
+* Mon Jul 13 2026 Simone Caronni <negativo17@gmail.com> - 0^20260706git0ce5178-9
+- Try with posttrans for restarting user's systemd units.
+
 * Mon Jul 13 2026 Simone Caronni <negativo17@gmail.com> - 0^20260706git0ce5178-8
 - Add wireplumber configuration to hide raw v4l2 devices.
 
